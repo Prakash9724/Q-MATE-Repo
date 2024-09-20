@@ -5,7 +5,7 @@ import Landing from './Landing'
 function App() {
   return (
     <div className='w-full'>
-      <Landing/>
+      <Landing/>    
     </div>
   )
 }
