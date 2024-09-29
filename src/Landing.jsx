@@ -13,13 +13,15 @@ import {
   Clock,
   Star,
   ArrowLeft,
-  ArrowRight
+  ArrowRight,
+  X,
+  ChevronDown
 } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
+import { museumData as museums } from "./Museums/museumData";
 
-
-
-
-
+const responsiveContainerClasses = "container mx-auto px-4 sm:px-6 lg:px-8";
+const responsiveSectionClasses = "py-8 sm:py-12 lg:py-16";
 
 
 const scrollbarHideStyles = `
@@ -31,6 +33,53 @@ const scrollbarHideStyles = `
     scrollbar-width: none;
   }
 `;
+
+
+
+const dropdownStyles = `
+  .dropdown-menu {
+    transform-origin: top;
+    transform: scaleY(0);
+    opacity: 0;
+    transition: transform 0.01s ease-in-out, opacity 0.01s ease-in-out;
+  }
+  .dropdown-menu.open {
+    transform: scaleY(1);
+    opacity: 1;
+  }
+  .dropdown-item {
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+  }
+  .dropdown-menu.open .dropdown-item:nth-child(1) {
+    transition-delay: 0s;
+  }
+  .dropdown-menu.open .dropdown-item:nth-child(2) {
+    transition-delay: 0.2s;
+  }
+  .dropdown-menu.open .dropdown-item:nth-child(3) {
+    transition-delay: 0.4s;
+  }
+  .dropdown-menu.open .dropdown-item {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const navbarStyles = `
+  .search-bar {
+    transform: translateY(-100%);
+    opacity: 0;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+  }
+  .search-bar.visible {
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+`;
+
 
 
 // Simple CustomButton component
@@ -51,6 +100,7 @@ const Select = ({ children, className, ...props }) => (
     {children}
   </select>
 );
+
 
 const SelectContent = ({ children }) => <>{children}</>;
 
@@ -333,10 +383,33 @@ function CalendarCard({
 }
 
 function Landing() {
+
+  const [isSearchBarVisible, setIsSearchBarVisible] = useState(false);//Search Bar
+  const searchBarRef = useRef(null);//Search Bar
+  useEffect(() => {
+    const handleScroll = () => {
+      if (searchBarRef.current) {
+        const searchBarPosition = searchBarRef.current.getBoundingClientRect().top;
+        const navbarHeight = 64; // Adjust this value based on your navbar height
+        setIsSearchBarVisible(searchBarPosition <= navbarHeight);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedLanguage, setSelectedLanguage] = useState("English");
+  const handleLanguageSelect = (language) => {
+    setSelectedLanguage(language);
+    setIsLanguageDropdownOpen(false);
+  };
+  const [isLanguageDropdownOpen, setIsLanguageDropdownOpen] = useState(false); // Language Dropdown
+
+  const [searchQuery, setSearchQuery] = useState(""); // Search Bar 
   const [filterCategory, setFilterCategory] = useState("all");
   const [featuredScrollPosition, setFeaturedScrollPosition] = useState(0);
   const featuredMuseumsRef = useRef(null);
@@ -345,11 +418,25 @@ function Landing() {
     upcomingEvents.map(() => new Date())
   );
 
- 
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef(null);
 
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
 
- 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsMenuOpen(false);
+      }
+    };
 
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
 
   useEffect(() => {
@@ -412,6 +499,14 @@ function Landing() {
     );
   };
 
+
+  const navigate = useNavigate();
+
+  const handleLearnMore = (museumId) => {
+    navigate(`/museum/${museumId}`);
+    window.scrollTo(0, 0);
+  };
+
   const handleNextMonth = index => {
     setCalendarDates(prev =>
       prev.map((date, i) =>
@@ -421,92 +516,169 @@ function Landing() {
       )
     );
   };
-
   return (
-    <div className="relative">
-       
-       <style>{scrollbarHideStyles}</style>
-          <Globe className="absolute left-2 top-1/2 transform -translate-y-1/2 h-5 w-5 text-white" />
-      <nav className="absolute top-0 left-0 right-0 z-50 flex justify-between items-center p-6 bg-gradient-to-b from-gray-900 to-transparent">
-        <div className="text-white text-3xl font-bold tracking-wider">
-          Museum Explorer
-        </div>
-        <div className="flex items-center space-x-6">
-          <button
-            className="bg-transparent flex items-center text-white border-white hover:bg-white/10 hover:text-black font-semibold transition-colors px-8 py-2 rounded"
-          >
-            <Compass className="mr-2 h-5 w-5" />
+    <div className="relative overflow-x-hidden">
+      <style>{scrollbarHideStyles}</style>
+      <style>{dropdownStyles}</style>
+      <style>{navbarStyles}</style>
+      
+      
+      <nav className="fixed top-0 left-0 right-0 z-50 flex justify-between items-center p-4 bg-gradient-to-b from-gray-900 to-transparent">
+      <div className="text-white text-xl sm:text-3xl font-bold tracking-wider pointer-events-none">
+    Heritage Hub
+  </div>
+  
+  <div className={`search-bar flex-1 flex justify-center   ${isSearchBarVisible ? 'visible' : ''}`}>
+    <form
+      onSubmit={handleSearch}
+      className="w-[30vw] max-w-3xl flex items-center overflow-hidden text-ellipsis bg-[#B4A1A1] rounded-full  shadow-lg "
+    >
+      <Input
+        type="text"
+        placeholder="Search Your Favorite Museum"
+        value={searchQuery}
+        onChange={e => setSearchQuery(e.target.value)}
+        className="flex-grow bg-transparent text-white placeholder-white border-none focus:ring-0 focus:outline-none text-base sm:text-lg"
+      />
+      <button
+        type="button"
+        variant="ghost"
+        className="text-white p-2 sm:p-4 rounded-full hover:bg-white/10 transition-colors"
+      >
+        <Mic className="h-4 w-4 sm:h-6 sm:w-6" />
+      </button>
+      <button
+        type="submit"
+        variant="ghost"
+        className="text-white p-2 pr-4 sm:p-4 rounded-full hover:bg-white/10 transition-colors"
+      >
+        <Search className="h-4 w-4 mr-2 sm:h-6 sm:w-6" />
+      </button>
+    </form>
+  </div>
+
+        <button onClick={toggleMenu} className="text-white sm:hidden">
+          <Menu className="h-6 w-6" />
+        </button>
+        <div className="hidden sm:flex items-center space-x-6">
+          <button className="text-white hover:text-gray-300 transition-colors">
+            <Compass className="inline-block mr-2 h-5 w-5" />
             Explore
           </button>
-          
-          <select className="w-[130px] bg-transparent text-white hover:text-black font-semibold hover:bg-white/10  rounded pl-6 pr-2 py-2">
-            <option value="" disabled selected hidden>Language</option>
-            <option value="en" className="text-black">English</option>
-            <option value="hi" className="text-black">हिन्दी</option>
-            <option value="gu" className="text-black">ગુજરાતી</option>
-          </select>
 
-          
-          <button
-            variant="ghost"
-           className="bg-transparent flex items-center text-white hover:bg-white/10 hover:text-black font-semibold transition-colors  px-8 py-2  rounded"
+     <div 
+            className="relative"
+            onMouseEnter={() => setIsLanguageDropdownOpen(true)}
+            onMouseLeave={() => setIsLanguageDropdownOpen(false)}
           >
+            <button className="text-white hover:text-gray-300 transition-colors">
+              {selectedLanguage}
+              <ChevronDown className="inline-block ml-1 h-4 w-4" />
+            </button>
+            <div className={`dropdown-menu absolute top-full left-0 mt-1 bg-white rounded-md shadow-lg py-1 ${isLanguageDropdownOpen ? 'open' : ''}`}>
+              <button 
+                className="dropdown-item block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                onClick={() => handleLanguageSelect("English")}
+              >
+                English
+              </button>
+              <button 
+                className="dropdown-item block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                onClick={() => handleLanguageSelect("हिन्दी")}
+              >
+                हिन्दी
+              </button>
+              <button 
+                className="dropdown-item block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                onClick={() => handleLanguageSelect("ગુજરાતી")}
+              >
+                ગુજરાતી
+              </button>
+            </div>
+          </div>
+
+          <button className="text-white hover:text-gray-300 transition-colors">
             Login
           </button>
- 
-          <select className="bg-transparent  text-white  hover:bg-white/10 hover:text-black font-semibold  rounded ml-8  px-2 py-2 appearance-none cursor-pointer">
+          <select className="bg-transparent text-white hover:text-gray-300 transition-colors">
             <option value="" disabled selected hidden>Menu</option>
             <option value="recent" className="text-black">Recently Visited</option>
             <option value="help" className="text-black">Help & Support</option>
           </select>
-          <Menu className="absolute right-14 top-1/2 transform -translate-y-1/2 text-white pointer-events-none" />
+        </div>
+        <div 
+          ref={menuRef}
+          className={`fixed inset-y-0 right-0 transform ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'} w-64 bg-white bg-opacity-20 backdrop-filter backdrop-blur-lg text-white p-6 transition-transform duration-300 ease-in-out sm:hidden z-50`}
+        >
+          <button onClick={toggleMenu} className="absolute top-4 right-4 text-white">
+            <X className="h-6 w-6" />
+          </button>
+          <div className="mt-8 space-y-4">
+            <button className="block w-full text-left py-2">
+              <Compass className="inline-block mr-2 h-5 w-5" />
+              Explore
+            </button>
+            <select className="block w-full bg-transparent text-white py-2">
+              <option value="" disabled selected hidden>Language</option>
+              <option value="en" className="text-black">English</option>
+              <option value="hi" className="text-black">हिन्दी</option>
+              <option value="gu" className="text-black">ગુજરાતી</option>
+            </select>
+            <button className="block w-full text-left py-2">
+              Login
+            </button>
+            <select className="block w-full bg-transparent text-white py-2">
+              <option value="" disabled selected hidden>Menu</option>
+              <option value="recent" className="text-black">Recently Visited</option>
+              <option value="help" className="text-black">Help & Support</option>
+            </select>
+          </div>
         </div>
       </nav>
-
-      <div className="relative h-[50vh] md:h-[60vh] lg:h-screen overflow-hidden">
+  
+      <div className="relative h-[50vh] sm:h-[60vh] lg:h-screen overflow-hidden">
         <img
           src={carouselImages[currentImageIndex].url}
           alt={carouselImages[currentImageIndex].title}
           className="w-full h-full object-cover absolute"
-            
         />
-        <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-center items-center text-white p-8">
-          <div className="w-full max-w-4xl px-4 mb-8">
+        <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-center items-center text-white p-4 sm:p-8">
+          <div ref={searchBarRef} className="w-full max-w-3xl px-4 mb-4 sm:mb-8">
             <form
               onSubmit={handleSearch}
-              className="flex items-center bg-[#B4A1A1] rounded-full p-2 shadow-lg"
+              className="flex items-center bg-[#B4A1A1] rounded-full pl-2 shadow-lg"
             >
               <Input
                 type="text"
                 placeholder="Search Your Favorite Museum"
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="flex-grow bg-transparent text-white placeholder-white border-none focus:ring-0 focus:outline-none text-lg"
+                className="flex-grow bg-transparent text-white placeholder-white border-none focus:ring-0 focus:outline-none text-base sm:text-lg"
               />
               <button
                 type="button"
                 variant="ghost"
-                className="text-white p-4 rounded-full hover:bg-white/10 transition-colors"
+                className="text-white p-2 sm:p-4 rounded-full hover:bg-white/10 transition-colors"
               >
-                <Mic className="h-6 w-6" />
+                <Mic className="h-4 w-4 sm:h-6 sm:w-6" />
               </button>
               <button
                 type="submit"
                 variant="ghost"
-                className="text-white p-4 rounded-full hover:bg-white/10 transition-colors"
+                className="text-white p-2 pr-4 sm:p-4 rounded-full hover:bg-white/10 transition-colors"
               >
-                <Search className="h-6 w-6" />
+                <Search className="h-4 w-4 mr-2 sm:h-6 sm:w-6" />
               </button>
             </form>
           </div>
-          <div className="text-center max-w-3xl">
-            <h2 className="text-4xl md:text-5xl font-semibold mb-2">
+          <div className="text-center max-w-3xl px-4">
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-semibold mb-2">
               {carouselImages[currentImageIndex].title}
             </h2>
-            <h4 className="text-2xl md:text-3xl mb-4">
+            <h4 className="text-xl sm:text-2xl md:text-3xl mb-2 sm:mb-4">
               {carouselImages[currentImageIndex].subtitle}
             </h4>
-            <p className="text-lg md:text-xl mb-8">
+            <p className="text-base sm:text-lg md:text-xl mb-4 sm:mb-8">
               {carouselImages[currentImageIndex].description}{" "}
               <a
                 href="#"
@@ -515,40 +687,33 @@ function Landing() {
                 Know more
               </a>
             </p>
-            <button
-              size="lg"
-              className="bg-[#B4A1A1] rounded-lg text-white hover:bg-[#A08E8E] transition-colors text-xl px-10 py-3"
-            >
+            <button className="bg-[#B4A1A1] rounded-lg text-white hover:bg-[#A08E8E] transition-colors text-lg sm:text-xl px-6 sm:px-10 py-2 sm:py-3">
               Book now
             </button>
           </div>
         </div>
         <button
-        onClick={prevImage}
-        className="absolute top-1/2 left-4 transform -translate-y-1/2 bg-black text-white rounded-full p-2 hover:bg-gray-800 transition-colors"
-        aria-label="Previous image"
-      >
-        <ChevronLeft className="h-8 w-8" />
-      </button>
-      <button
-        onClick={nextImage}
-        className="absolute top-1/2 right-4 transform -translate-y-1/2 bg-black text-white rounded-full p-2 hover:bg-gray-800 transition-colors"
-        aria-label="Next image"
-      >
-        <ChevronRight className="h-8 w-8" />
-      </button>
-
-
-      
+          onClick={prevImage}
+          className="absolute top-1/2 left-2 sm:left-4 transform -translate-y-1/2 bg-black text-white rounded-full p-1 sm:p-2 hover:bg-gray-800 transition-colors"
+          aria-label="Previous image"
+        >
+          <ChevronLeft className="h-6 w-6 sm:h-8 sm:w-8" />
+        </button>
+        <button
+          onClick={nextImage}
+          onMouseMove={{style:{opacity:0,hover:{opacity:1},transition:'all 0.3s ease-in-out'}}}
+          className="absolute top-1/2 right-2 sm:right-4  transform -translate-y-1/2 bg-black text-white rounded-full p-1 sm:p-2 hover:bg-gray-800 transition-colors"
+          aria-label="Next image"
+        >
+          <ChevronRight className="h-6 w-6 sm:h-8 sm:w-8" />
+        </button>
       </div>
-
-      
-
+  
       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
         {carouselImages.map((_, index) => (
           <button
             key={index}
-            className={`w-3 h-3 rounded-full ${
+            className={`w-2 h-2 sm:w-3 sm:h-3 rounded-full ${
               index === currentImageIndex ? "bg-white" : "bg-white/50"
             }`}
             onClick={() => setCurrentImageIndex(index)}
@@ -556,40 +721,44 @@ function Landing() {
           />
         ))}
       </div>
-
+  
       {/* Featured Museums Section */}
-      <section className="py-16 bg-gray-100">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-8">Featured Museums</h2>
+      <section className={`${responsiveSectionClasses} bg-gray-100`}>
+        <div className={responsiveContainerClasses}>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-8">Featured Museums</h2>
           <div className="relative">
-          <div
+            <div
               ref={featuredMuseumsRef}
-              className="flex overflow-x-auto space-x-6 pb-4 scrollbar-hide"
-              style={{ scrollBehavior: 'smooth', width: 'calc((256px + 1.5rem) * 5.4)'}}
+              className="flex overflow-x-auto space-x-4 sm:space-x-6 pb-4 scrollbar-hide"
+              style={{ scrollBehavior: 'smooth' }}
             >
-              {featuredMuseums.map((museum, index) => (
+              {museums.map((museum, index) => (
                 <div
-                  key={index}
-                  className="flex-shrink-0 w-72 bg-white rounded-lg shadow-md overflow-hidden"
+                  key={museum.id}
+                  className="flex-shrink-0 w-64 sm:w-72 bg-white rounded-lg shadow-md overflow-hidden"
                 >
-                  <div className="relative h-40">
+                  <div className="relative h-36 sm:h-40">
                     <img
-                      src={museum.image}
+                      src={museum.images[0]}
                       alt={museum.name}
                       className="w-full h-full object-cover"
                     />
-                    <button className="absolute left-2 top-2 bg-white/80 text-black shadow-md rounded-full p-2 hover:bg-white transition-colors">
-                      <Heart className="h-5 w-5 text-red-500" />
+                    <button className="absolute left-2 top-2 bg-white/80 text-black shadow-md rounded-full p-1 sm:p-2 hover:bg-white transition-colors">
+                      <Heart className="h-4 w-4 sm:h-5 sm:w-5 text-red-500" />
                     </button>
                   </div>
-                  <div className="p-4">
-                    <h3 className="font-bold text-lg mb-2 truncate">{museum.name}</h3>
-                    <p className="text-sm text-gray-600 mb-4 line-clamp-2">
-                      {museum.highlight}
+                  <div className="p-3 sm:p-4">
+                    <h3 className="font-bold text-base sm:text-lg mb-2 truncate">{museum.name}</h3>
+                    <p className="text-xs sm:text-sm text-gray-600 mb-3 sm:mb-4 line-clamp-2">
+                      {museum.description.substring(0, 100)}...
                     </p>
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-500">Sept 2024 - Jan 2025</span>
-                      <button className="px-4 py-2 bg-white text-black border hover:bg-black/10 border-black rounded-lg text-sm font-semibold" variant="outline">
+                      <span className="text-xs sm:text-sm text-gray-500">Sept 2024 - Jan 2025</span>
+                      <button 
+                        onClick={() => handleLearnMore(museum.id)} 
+                        className="px-3 sm:px-4 py-1 sm:py-2 bg-white text-black border hover:bg-black/10 border-black rounded-lg text-xs sm:text-sm font-semibold" 
+                        variant="outline"
+                      >
                         Learn more
                       </button>
                     </div>
@@ -599,92 +768,97 @@ function Landing() {
             </div>
             <button
               onClick={() => scrollFeaturedSection("left")}
-              className="absolute ml-4 left-0 top-1/2 transform -translate-y-1/2 bg-white text-black shadow-md rounded-full p-2 hover:bg-gray-100"
+              className="absolute ml-2 sm:ml-4 left-0 top-1/2 transform -translate-y-1/2 bg-white text-black shadow-md rounded-full p-1 sm:p-2 hover:bg-gray-100"
               aria-label="Scroll left"
             >
-              <ChevronLeft className="h-6 w-6" />
+              <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
             <button
               onClick={() => scrollFeaturedSection("right")}
-              className="absolute mr-4 right-0 top-1/2 transform -translate-y-1/2 bg-white text-black shadow-md rounded-full p-2 hover:bg-gray-100"
+              className="absolute mr-2 sm:mr-4 right-0 top-1/2 transform -translate-y-1/2 bg-white text-black shadow-md rounded-full p-1 sm:p-2 hover:bg-gray-100"
               aria-label="Scroll right"
             >
-              <ChevronRight className="h-6 w-6" />
+              <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
           </div>
         </div>
       </section>
-
+  
       {/* Museums Near You Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-8">Museums Near You</h2>
-          <div className="flex items-center space-x-4 mb-6">
-            <Input
-              type="text"
-              placeholder="Search museums..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="flex-grow"
-            />
-            <Select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}>
-              <option value="all">All Museums</option>
-              <option value="Art">Art</option>
-              <option value="Science">Science</option>
-              <option value="History">History</option>
-            </Select>
-            <button onClick={handleSearch} className="bg-black text-white rounded-lg px-4 py-2 flex items-center font-semibold" >
-              <Search className="mr-2 text-white h-4 w-4"/> Search
-            </button>
-          </div>
+      <section className={`${responsiveSectionClasses} bg-white`}>
+      <div className={responsiveContainerClasses}>
+    <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-8">Museums Near You</h2>
+    <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4 mb-6">
+      <Input
+        type="text"
+        placeholder="Search museums..."
+        value={searchQuery}
+        onChange={e => setSearchQuery(e.target.value)}
+        className="w-full sm:w-[930px]" // Changed this line
+      />
+      <Select 
+        value={filterCategory} 
+        onChange={e => setFilterCategory(e.target.value)}
+        className="w-full sm:w-auto"
+      >
+        <option value="all">All Museums</option>
+        <option value="Art">Art</option>
+        <option value="Science">Science</option>
+        <option value="History">History</option>
+      </Select>
+      <button onClick={handleSearch} className="w-full sm:w-auto bg-black text-white rounded-lg px-4 py-2 flex items-center justify-center font-semibold">
+        <Search className="mr-2 text-white h-4 w-4"/> Search
+      </button>
+    </div>
           <div className="relative">
             <div
               ref={museumsNearYouRef}
-              className="flex overflow-x-hidden space-x-6 pb-4"
+              className="flex overflow-x-auto space-x-4 sm:space-x-6 pb-4 scrollbar-hide"
+              style={{ scrollBehavior: 'smooth', WebkitOverflowScrolling: 'touch' }}
             >
               {filteredMuseums.map((museum, index) => (
                 <div
                   key={index}
-                  className="flex-shrink-0 w-72 bg-white rounded-lg shadow-md overflow-hidden"
+                  className="flex-shrink-0 w-64 sm:w-72 bg-white rounded-lg shadow-md overflow-hidden"
                 >
-                  <div className="relative h-48">
+                  <div className="relative h-40 sm:h-48">
                     <img
                       src={museum.image}
                       alt={museum.name}
                       className="w-full h-full object-cover"
                     />
-                    <button className="absolute top-2 right-2 bg-white p-2 rounded-full shadow-md hover:bg-gray-100 transition-colors">
-                      <Heart className="h-5 w-5 text-red-500" />
+                    <button className="absolute top-2 right-2 bg-white p-1 sm:p-2 rounded-full shadow-md hover:bg-gray-100 transition-colors">
+                      <Heart className="h-4 w-4 sm:h-5 sm:w-5 text-red-500" />
                     </button>
                   </div>
-                  <div className="p-4">
-                    <h3 className="font-bold text-lg mb-2 truncate">
+                  <div className="p-3 sm:p-4">
+                    <h3 className="font-bold text-base sm:text-lg mb-2 truncate">
                       {museum.name}
                     </h3>
-                    <div className="flex items-center mb-2">
-                      <MapPin className="h-4 w-4 mr-1 text-gray-500" />
-                      <span className="text-sm text-gray-600">
+                    <div className="flex items-center mb-1 sm:mb-2">
+                      <MapPin className="h-3 w-3 sm:h-4 sm:w-4 mr-1 text-gray-500" />
+                      <span className="text-xs sm:text-sm text-gray-600">
                         {museum.location}
                       </span>
                     </div>
-                    <div className="flex items-center mb-2">
-                      <Clock className="h-4 w-4 mr-1 text-gray-500" />
-                      <span className="text-sm text-gray-600">
+                    <div className="flex items-center mb-1 sm:mb-2">
+                      <Clock className="h-3 w-3 sm:h-4 sm:w-4 mr-1 text-gray-500" />
+                      <span className="text-xs sm:text-sm text-gray-600">
                         {museum.openingHours}
                       </span>
                     </div>
                     <div className="flex items-center mb-2">
-                      <span className="text-sm text-gray-600 mr-2">
+                      <span className="text-xs sm:text-sm text-gray-600 mr-2">
                         {museum.distance}
                       </span>
                       <div className="flex items-center">
-                        <Star className="h-4 w-4 text-yellow-400" />
-                        <span className="text-sm text-gray-600 ml-1">
+                        <Star className="h-3 w-3 sm:h-4 sm:w-4 text-yellow-400" />
+                        <span className="text-xs sm:text-sm text-gray-600 ml-1">
                           {museum.rating.toFixed(1)}
                         </span>
                       </div>
                     </div>
-                    <div className="flex flex-wrap gap-2 mb-4">
+                    <div className="flex flex-wrap gap-1 sm:gap-2 mb-3 sm:mb-4">
                       {museum.tags.map((tag, tagIndex) => (
                         <span
                           key={tagIndex}
@@ -694,34 +868,34 @@ function Landing() {
                         </span>
                       ))}
                     </div>
-                    <button className="w-full bg-black px-4 py-2 text-white font-semibold rounded-lg hover:bg-black/80">Book Tickets Now</button>
+                    <button className="w-full bg-black px-3 sm:px-4 py-1 sm:py-2 text-white font-semibold rounded-lg hover:bg-black/80 text-sm sm:text-base">Book Tickets Now</button>
                   </div>
                 </div>
               ))}
             </div>
             <button
               onClick={() => scrollSection("left", museumsNearYouRef)}
-              className="absolute ml-4 left-0 top-1/2 transform -translate-y-1/2 bg-black text-white shadow-md rounded-full p-2 hover:bg-gray-800"
+              className="absolute ml-2 sm:ml-4 left-0 top-1/2 transform -translate-y-1/2 bg-black text-white shadow-md rounded-full p-1 sm:p-2 hover:bg-gray-800"
               aria-label="Scroll left"
             >
-              <ChevronLeft className="h-6 w-6 " />
+              <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
             <button
               onClick={() => scrollSection("right", museumsNearYouRef)}
-              className="absolute mr-4 right-0 top-1/2 transform -translate-y-1/2 bg-black text-white shadow-md rounded-full p-2 hover:bg-gray-800"
+              className="absolute mr-2 sm:mr-4 right-0 top-1/2 transform -translate-y-1/2 bg-black text-white shadow-md rounded-full p-1 sm:p-2 hover:bg-gray-800"
               aria-label="Scroll right"
             >
-              <ChevronRight className="h-6 w-6" />
+              <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
             </button>
           </div>
         </div>
       </section>
-
+  
       {/* Upcoming Events Section */}
-      <section className="py-16 bg-gray-100">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-8">Upcoming Events</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <section className={`${responsiveSectionClasses} bg-gray-100`}>
+        <div className={responsiveContainerClasses}>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-8">Upcoming Events</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
             {upcomingEvents.map((event, index) => (
               <CalendarCard
                 key={index}
@@ -736,23 +910,23 @@ function Landing() {
           </div>
         </div>
       </section>
-
+  
       {/* Virtual Exploration Section */}
-      <section className="py-16 bg-white">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-8">Explore Museums Virtually</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-gray-100 rounded-lg p-6">
-              <h3 className="text-xl font-semibold mb-4">Virtual Tours</h3>
-              <p className="mb-4">
+      <section className={`${responsiveSectionClasses} bg-white`}>
+        <div className={responsiveContainerClasses}>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-8">Explore Museums Virtually</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-8">
+            <div className="bg-gray-100 rounded-lg p-4 sm:p-6">
+              <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Virtual Tours</h3>
+              <p className="mb-3 sm:mb-4 text-sm sm:text-base">
                 Experience our museums from the comfort of your home with our
                 immersive virtual tours.
               </p>
               <CustomButton>Start Virtual Tour</CustomButton>
             </div>
-            <div className="bg-gray-100 rounded-lg p-6">
-              <h3 className="text-xl font-semibold mb-4">Online Exhibitions</h3>
-              <p className="mb-4">
+            <div className="bg-gray-100 rounded-lg p-4 sm:p-6">
+              <h3 className="text-lg sm:text-xl font-semibold mb-3 sm:mb-4">Online Exhibitions</h3>
+              <p className="mb-3 sm:mb-4 text-sm sm:text-base">
                 Explore our curated online exhibitions featuring artworks and
                 artifacts from around the world.
               </p>
@@ -761,13 +935,13 @@ function Landing() {
           </div>
         </div>
       </section>
-
+  
       {/* Newsletter Section */}
-      <section className="py-16 bg-gray-100">
-        <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold mb-8">Stay Connected</h2>
-          <div className="bg-white rounded-lg p-6 max-w-md mx-auto">
-            <h3 className="text-xl font-semibold mb-4">
+      <section className={`${responsiveSectionClasses} bg-gray-100`}>
+        <div className={responsiveContainerClasses}>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-4 sm:mb-8">Stay Connected</h2>
+          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-md mx-auto">
+            <h3 className="text-lg sm:text-xl font-semibold mb-4">
               Subscribe to Our Newsletter
             </h3>
             <form className="space-y-4">
@@ -779,6 +953,18 @@ function Landing() {
       </section>
     </div>
   );
+  
+
+
+
+
+
+
+
+
+
+
+
 }
 
 export default Landing; 
