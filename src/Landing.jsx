@@ -20,7 +20,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { museumData as museums } from "./Museums/museumData";
 import Explore from "./Explore";
-import AskQmate from './components/Ask-qmate';  // Import Ask-qmate component
+import AskQmate from './components/Askqmate';  // Import Ask-qmate component
 
 const responsiveContainerClasses = "container mx-auto px-4 sm:px-6 lg:px-8";
 const responsiveSectionClasses = "py-8 sm:py-12 lg:py-16";
