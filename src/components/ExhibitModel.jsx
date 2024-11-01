@@ -21,7 +21,7 @@ function ExhibitModal({ exhibit, onClose }) {
           <FaTimes size={20} />
         </button>
       </div>
-      <div className="aspect-w-16 aspect-h-9 mb-4 h-[30vh] rounded-md overflow-hidden">
+      <div className="aspect-w-16 aspect-h-9 h-[36vh] mb-4 rounded-md overflow-hidden">
         <iframe
           src={`https://www.youtube.com/embed/${exhibit.youtubeId}`}
           frameBorder="0"

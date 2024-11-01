@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { museumData as museums } from "./Museums/museumData";
+import Explore from "./Explore";
+import AskQmate from './components/Ask-qmate';  // Import Ask-qmate component
 
 const responsiveContainerClasses = "container mx-auto px-4 sm:px-6 lg:px-8";
 const responsiveSectionClasses = "py-8 sm:py-12 lg:py-16";
@@ -82,6 +84,8 @@ const navbarStyles = `
 
 
 
+
+
 // Simple CustomButton component
 const CustomButton = ({ children, className, ...props }) => (
   <button {...props} className={`px-4 py-2 bg-black text-white rounded hover:bg-black/80 ${className}`}>
@@ -114,29 +118,26 @@ const SelectValue = ({ placeholder }) => <option value="">{placeholder}</option>
 
 const carouselImages = [
     {
-        url:
-          "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhykx3SGFwpZXjTrk_7Ee5EFj-N8HXv8zjP_pCyqJbQOgDRxNW_0qD3CHu5mOHvL0plteW9ruSXa4uVKj5xvhX_G-m4lFZHK4qgbqAzQ1X5KLf0AmS8_OGXpoaNYsIsZKiOBmxJ3DgN8v-xAtyPfJD-dJuY7MXfFuE-kPP5a-wUWb7HfFXa4cPxdx1uYpk/s2048/city%20palace.jpeg",
+        url: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhykx3SGFwpZXjTrk_7Ee5EFj-N8HXv8zjP_pCyqJbQOgDRxNW_0qD3CHu5mOHvL0plteW9ruSXa4uVKj5xvhX_G-m4lFZHK4qgbqAzQ1X5KLf0AmS8_OGXpoaNYsIsZKiOBmxJ3DgN8v-xAtyPfJD-dJuY7MXfFuE-kPP5a-wUWb7HfFXa4cPxdx1uYpk/s2048/city%20palace.jpeg",
         title: "City Palace",
         subtitle: "Udaipur",
-        description:
-          "City Palace, Udaipur is a palace complex situated in the city of Udaipur in the Indian state of Rajasthan."
-      },
-      {
-        url:
-          "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEi9qnXuAPANSu_eZ3sZrfZ_v9iJ6V7TW8McZcCwyQhDRVgq8BSNJ3kaIdf_LG8-7Qz6R6cnK8GUoNDGe4zv2uO8dHi3_tGb2_AVfbARymPULqQIbSSZ5n-0zbx-mPahsom-WhHsoAS6OW90Nrm4MhxquGHMIV1847eFgLXDypPZAmhGSRo7F2cPbsANAHiV/s1280/IMG-20240918-WA0005.jpg",
-        title: "SOHAM Himalayan Centre",
-        subtitle: "Himalayan Region",
-        description:
-          "SOHAM Himalayan Centre offers a unique experience in the heart of the Himalayas."
-      },
-      {
-        url:
-          "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhyWwBRUykM7ujlIVQqrm916Aakn09a1hJAEFJ5rm5mQ8qRo-avf7AQ6e2nWnDIsrKdw0mi0rw-8Xo-S5Ys9a9gdv-UGQ4dXcnds5VCcAJQALcg_b8xe0NIU_6LkP8bQQMSIFMmQgs2Xyfgp2NFDrn_zNuHpeMieIVOKoX95DX8MCKEei1X3846JBIzvCVK/s16000/IMG-20240918-WA0002.jpg",
-        title: "Government Museum Chennai",
-        subtitle: "Chennai",
-        description:
-          "The Government Museum Chennai houses a rich collection of artifacts showcasing the history and culture of South India."
-      }
+        description: "City Palace, Udaipur is a palace complex situated in the city of Udaipur in the Indian state of Rajasthan.",
+        id: 1
+    },
+    {
+        url: "https://www.travelescape.in/wp-content/uploads/2017/07/Jodhpur-1-www_mouthshut_com.jpg",
+        title: "Mehrangarh Fort",
+        subtitle: "Jodhpur, Rajasthan",
+        description: "Mehrangarh Fort, one of the largest forts in India",
+        id: 2
+    },
+    {
+        url: "https://images.moneycontrol.com/static-mcnews/2023/04/pexels-ankur-bagai-6440428-770x433.jpg?impolicy=website&width=770&height=431",
+        title: "Hawa Mahal",
+        subtitle: "Jaipur, Rajasthan",
+        description: "Hawa Mahal, or the 'Palace of Winds'.",
+        id: 3
+    }
 ];
 
 const featuredMuseums = [
@@ -463,6 +464,44 @@ function Landing() {
     );
   };
 
+
+
+  const [isQmateOpen, setIsQmateOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [inputMessage, setInputMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const toggleQmate = () => {
+    setIsQmateOpen(!isQmateOpen);
+    if (!isQmateOpen) {
+      setMessages([]); // Reset messages when opening
+    }
+  };
+
+  const handleSendMessage = async (message) => {
+    if (message.trim() === '') return;
+    
+    setIsLoading(true);
+    // Add user message
+    setMessages(prev => [...prev, { text: message, sender: 'user' }]);
+    
+    try {
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Add Qmate response
+      setMessages(prev => [...prev, {
+        text: "This is a sample response from Qmate. Replace with actual API response.",
+        sender: 'qmate'
+      }]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+    } finally {
+      setIsLoading(false);
+      setInputMessage('');
+    }
+  };
+
   const scrollFeaturedSection = (direction) => {
     const container = featuredMuseumsRef.current;
     const cardWidth = 280; // width of each card including margin
@@ -502,8 +541,16 @@ function Landing() {
 
   const navigate = useNavigate();
 
-  const handleLearnMore = (museumId) => {
-    navigate(`/museum/${museumId}`);
+  const handleLearnMore = (index) => {
+    const selectedMuseum = museums[index];
+    navigate(`/museum/${selectedMuseum.id}`);
+    window.scrollTo(0, 0);
+  };
+
+
+  const handlecarosel = (index) => {
+    const selectedMuseum = carouselImages[index];
+    navigate(`/museum/${selectedMuseum.id}`);
     window.scrollTo(0, 0);
   };
 
@@ -516,6 +563,14 @@ function Landing() {
       )
     );
   };
+
+  const scrollToSearchBar = () => {
+    searchBarRef.current?.scrollIntoView({ 
+      behavior: 'smooth',
+      block: 'center'
+    });
+  };
+
   return (
     <div className="relative overflow-x-hidden">
       <style>{scrollbarHideStyles}</style>
@@ -528,10 +583,11 @@ function Landing() {
     Heritage Hub
   </div>
   
-  <div className={`search-bar flex-1 flex justify-center   ${isSearchBarVisible ? 'visible' : ''}`}>
+  <div className={`search-bar flex-1 flex justify-center items-center ml-14 ${isSearchBarVisible ? 'visible' : ''}`}>
+    {/* Desktop Search Bar */}
     <form
       onSubmit={handleSearch}
-      className="w-[30vw] max-w-3xl flex items-center overflow-hidden text-ellipsis bg-[#B4A1A1] rounded-full  shadow-lg "
+      className="hidden sm:flex w-[30vw] max-w-3xl items-center overflow-hidden text-ellipsis bg-[#B4A1A1] rounded-full shadow-lg"
     >
       <Input
         type="text"
@@ -555,16 +611,24 @@ function Landing() {
         <Search className="h-4 w-4 mr-2 sm:h-6 sm:w-6" />
       </button>
     </form>
+
+    {/* Mobile Search Icon */}
+    <button 
+      onClick={scrollToSearchBar} 
+      className="sm:hidden absolute right-1  text-white p-2 hover:bg-white/10 rounded-full"
+    >
+      <Search className="h-5 w-5" />
+    </button>
   </div>
 
         <button onClick={toggleMenu} className="text-white sm:hidden">
           <Menu className="h-6 w-6" />
         </button>
         <div className="hidden sm:flex items-center space-x-6">
-          <button className="text-white hover:text-gray-300 transition-colors">
+          <Link to={"/explore"} className="text-white hover:text-gray-300 transition-colors">
             <Compass className="inline-block mr-2 h-5 w-5" />
             Explore
-          </button>
+          </Link>
 
      <div 
             className="relative"
@@ -616,7 +680,7 @@ function Landing() {
           <div className="mt-8 space-y-4">
             <button className="block w-full text-left py-2">
               <Compass className="inline-block mr-2 h-5 w-5" />
-              Explore
+              <Link to={"/explore"}> Explore</Link>
             </button>
             <select className="block w-full bg-transparent text-white py-2">
               <option value="" disabled selected hidden>Language</option>
@@ -671,6 +735,7 @@ function Landing() {
               </button>
             </form>
           </div>
+
           <div className="text-center max-w-3xl px-4">
             <h2 className="text-2xl sm:text-4xl md:text-5xl font-semibold mb-2">
               {carouselImages[currentImageIndex].title}
@@ -681,16 +746,22 @@ function Landing() {
             <p className="text-base sm:text-lg md:text-xl mb-4 sm:mb-8">
               {carouselImages[currentImageIndex].description}{" "}
               <a
+              onClick={() => handleLearnMore(currentImageIndex)}
                 href="#"
                 className="underline hover:text-gray-300 transition-colors"
               >
                 Know more
               </a>
             </p>
-            <button className="bg-[#B4A1A1] rounded-lg text-white hover:bg-[#A08E8E] transition-colors text-lg sm:text-xl px-6 sm:px-10 py-2 sm:py-3">
+            <button 
+              onClick={() => handlecarosel(currentImageIndex)} 
+              className="bg-[#B4A1A1] rounded-lg text-white hover:bg-[#A08E8E] transition-colors text-lg sm:text-xl px-6 sm:px-10 py-2 sm:py-3"
+            >
               Book now
             </button>
           </div>
+
+          
         </div>
         <button
           onClick={prevImage}
@@ -755,7 +826,7 @@ function Landing() {
                     <div className="flex justify-between items-center">
                       <span className="text-xs sm:text-sm text-gray-500">Sept 2024 - Jan 2025</span>
                       <button 
-                        onClick={() => handleLearnMore(museum.id)} 
+                        onClick={() => handleLearnMore(index)} 
                         className="px-3 sm:px-4 py-1 sm:py-2 bg-white text-black border hover:bg-black/10 border-black rounded-lg text-xs sm:text-sm font-semibold" 
                         variant="outline"
                       >
@@ -869,6 +940,23 @@ function Landing() {
                       ))}
                     </div>
                     <button className="w-full bg-black px-3 sm:px-4 py-1 sm:py-2 text-white font-semibold rounded-lg hover:bg-black/80 text-sm sm:text-base">Book Tickets Now</button>
+                      
+                    <button onClick={toggleQmate} className="bg-black w-full mt-2 text-white border border-gray-300 px-4 py-2 rounded-lg font-semibold hover:bg-zinc-800 hover:scale-105 transition:ease-in-out duration-150 hover:animate-pulse hover:text-white">
+                Ask Qmate
+            </button>
+            {isQmateOpen && (
+                <AskQmate
+                    isOpen={isQmateOpen}
+                    onClose={toggleQmate}
+                    messages={messages}
+                    isLoading={isLoading}
+                    onSendMessage={handleSendMessage}
+                    inputMessage={inputMessage}
+                    setInputMessage={setInputMessage}
+                />
+            )}
+
+   
                   </div>
                 </div>
               ))}
@@ -957,15 +1045,7 @@ function Landing() {
 
 
 
-
-
-
-
-
-
-
-
 }
 
-export default Landing; 
+export default Landing;
                 
